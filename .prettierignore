@@ -1,0 +1,9 @@
+//add files to ignore prettier formatting
+
+/node_modules
+./dist
+/.vscode
+
+*.env
+.env
+.env*
