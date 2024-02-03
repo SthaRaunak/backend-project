@@ -1,7 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import jwt from "jsonwebtoken";
-import bcrypt, { compare } from "bcrypt";
-import { SALT_ROUNDS } from "../constants";
+import bcrypt from "bcrypt";
+import { SALT_ROUNDS } from "../constants.js";
 
 const userSchema = new Schema(
     {
@@ -18,7 +18,6 @@ const userSchema = new Schema(
             type: String,
             required: true,
             unique: true,
-            lowercase: true,
             trim: true,
         },
 
@@ -47,7 +46,7 @@ const userSchema = new Schema(
         watchHistory:
             [
                 {
-                    type: Schema.Types.ObjecId,
+                    type: Schema.Types.ObjectId,
                     ref: 'Video'
                 }
             ],
