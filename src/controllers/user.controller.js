@@ -2,7 +2,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { User } from "../models/user.model.js";
 import jwt from "jsonwebtoken";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { deleteOnCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { SALT_ROUNDS } from "../constants.js";
 
@@ -314,7 +314,8 @@ const updateUserAvatar = asyncHandler(
             throw new ApiError(400, "Errror while upload to CLoudinary");
         }
 
-        const { _id } = req.user;
+        const { _id, avatar: oldAvatarCloudinaryURL} = req.user;
+
 
         const user = await User.findByIdAndUpdate(_id,
             {
@@ -326,6 +327,7 @@ const updateUserAvatar = asyncHandler(
                 new: true,
             }).select('-password -refreshToken');
 
+        const cloudResponse = await deleteOnCloudinary(oldAvatarCloudinaryURL);
 
         return res.status(200, user, "User avatar updated succesfully");
     }
@@ -345,7 +347,12 @@ const updateCoverImage = asyncHandler(
             throw new ApiError(400, "Error while uploading to Cloudinary");
         }
 
-        const {_id} = req.user;
+
+
+        const { _id, coverImage: oldCoverImageCloudinaryUrl } = req.user;
+
+
+
 
         const user = await User.findByIdAndUpdate(
             _id,
@@ -361,9 +368,14 @@ const updateCoverImage = asyncHandler(
             "-password -rereshToken "
         )
 
-        return res.status(200).json(new ApiResponse(200,user,"Cover Image updated successfully."));
+
+        const cloudResponse = await deleteOnCloudinary(oldCoverImageCloudinaryUrl);
+
+        console.log(cloudResponse);
+
+        return res.status(200).json(new ApiResponse(200, user, "Cover Image updated successfully."));
     }
 )
 
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccuontDetails, updateUserAvatar, updateCoverImage};
+export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccuontDetails, updateUserAvatar, updateCoverImage };
