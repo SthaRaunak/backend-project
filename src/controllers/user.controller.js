@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { deleteOnCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { SALT_ROUNDS } from "../constants.js";
+import mongoose, { mongo } from "mongoose";
 
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
@@ -267,6 +268,7 @@ const getCurrentUser = asyncHandler(
     async (req, res, next) => {
 
         return res.status(200).json(
+
             new ApiResponse(200, req.user, "current user fetched successfully.")
         )
     }
@@ -407,7 +409,7 @@ const getUserChannelProfile = asyncHandler(
             },
             {
                 $addFields: {
-                    subscribersCount: { $size: "$subcscribers" },
+                    subscribersCount: { $size: "$subscribers" },
                     channelsSubscribedToCount: { $size: "$subscribedTo" },
                     isSubscribed: {
                         $cond: {
@@ -433,17 +435,63 @@ const getUserChannelProfile = asyncHandler(
             }
         ]);
 
-        if(!channel?.length){
-            throw new ApiError(404 ,"channel does not exist");
+        if (!channel?.length) {
+            throw new ApiError(404, "channel does not exist");
         }
 
         console.log(channel); //aggregrate  pipeline return value (will be array of object)
 
         return res.status(200).json(
-            new ApiResponse(200, channel[0],"User channel fetched succesfullly ")
+            new ApiResponse(200, channel[0], "User channel fetched succesfullly ")
         )
     }
 )
 
+const getWatchHistory = asyncHandler(
+    async (req, res, next) => {
+        const user = User.aggregate([
+            {
+                $match: {
+                    _id: new mongoose.Types.ObjectId(req.user._id), //here we cannot put in the string id that we got using find method because in that method moongose automattically converts the objectId (_id) that is stored in mongodb (part of mongooses default serialization process) , So we convert to object id with help of mongoose
+                }
+            },
+            {
+                $lookup: {
+                    from: "videos",
+                    localField: "watchedVideos",
+                    foreignField: "videos",
+                    as: "watchedVideos",
+                    pipeline: [
+                        {
+                            $lookup: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullName: 1,
+                                        username: 1,
+                                        avatar: 1,
+                                    },
+                                },
+                                {
+                                    $addFields: {
+                                        owner: {
+                                            $first: "$owner", //look up returns and array so we just choose the first element for a better structure in the response
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+        ])
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccuontDetails, updateUserAvatar, updateCoverImage, getUserChannelProfile };
+        return res.status(200).json( 
+            new ApiResponse(200,user[0].watchHistory,"watch History fetched succesfully"),
+        );
+    }
+)
+export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccuontDetails, updateUserAvatar, updateCoverImage, getUserChannelProfile , getWatchHistory };
