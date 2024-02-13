@@ -493,5 +493,6 @@ const getWatchHistory = asyncHandler(
             new ApiResponse(200,user[0].watchHistory,"watch History fetched succesfully"),
         );
     }
-)
+);
+
 export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccuontDetails, updateUserAvatar, updateCoverImage, getUserChannelProfile , getWatchHistory };
